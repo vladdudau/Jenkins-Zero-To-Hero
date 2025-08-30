@@ -47,20 +47,31 @@ pipeline {
         }
         steps {
             withCredentials([string(credentialsId: 'github', variable: 'GITHUB_TOKEN')]) {
-                sh '''
+          sh '''
     git checkout main
     git pull origin main
     git config user.email "dudau.vlad@gmail.com"
     git config user.name "Vlad Dudau"
 
-    # rescriem mereu pe baza fișierului original
-    cp java-maven-sonar-argocd-helm-k8s/spring-boot-app-manifests/deployment.yml java-maven-sonar-argocd-helm-k8s/spring-boot-app-manifests/deployment.yml
+    # Extragem versiunea curentă din deployment.yml (ultima după ":")
+    CURRENT_TAG=$(grep "vladdudau0403/test-image:" java-maven-sonar-argocd-helm-k8s/spring-boot-app-manifests/deployment.yml | sed 's/.*://')
+    
+    # Dacă nu găsim tag, începem de la 0
+    if [ -z "$CURRENT_TAG" ]; then
+      CURRENT_TAG=0
+    fi
 
-    sed -i "s/replaceImageTag/${BUILD_NUMBER}/g" java-maven-sonar-argocd-helm-k8s/spring-boot-app-manifests/deployment.yml
+    # Incrementăm versiunea
+    NEW_TAG=$((CURRENT_TAG + 1))
+
+    # Înlocuim versiunea în fișier
+    sed -i "s/\\(vladdudau0403\\/test-image:\\)${CURRENT_TAG}/\\1${NEW_TAG}/" java-maven-sonar-argocd-helm-k8s/spring-boot-app-manifests/deployment.yml
+
     git add java-maven-sonar-argocd-helm-k8s/spring-boot-app-manifests/deployment.yml
-    git commit -m "Update deployment image to version ${BUILD_NUMBER}" || echo "No changes to commit"
+    git commit -m "Update deployment image to version ${NEW_TAG}" || echo "No changes to commit"
     git push https://${GITHUB_TOKEN}@github.com/${GIT_USER_NAME}/${GIT_REPO_NAME} main
 '''
+
 
             }
         }
