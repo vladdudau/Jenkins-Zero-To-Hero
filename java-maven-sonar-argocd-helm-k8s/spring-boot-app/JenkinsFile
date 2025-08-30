@@ -1,11 +1,5 @@
 pipeline {
-  agent {
-    docker 
-    {
-        image 'vladdudau0403/test-image:latest'
-        args '--user root -v /var/run/docker.sock:/var/run/docker.sock'
-    }
-  }
+  agent any
   stages {
     stage('Checkout') {
       steps {
