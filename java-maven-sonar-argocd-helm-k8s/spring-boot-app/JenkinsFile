@@ -47,7 +47,7 @@ pipeline {
         }
         steps {
             withCredentials([string(credentialsId: 'github', variable: 'GITHUB_TOKEN')]) {
-         sh '''
+       sh '''
     git checkout main
     git pull origin main
     git config user.email "dudau.vlad@gmail.com"
@@ -55,25 +55,19 @@ pipeline {
 
     FILE=java-maven-sonar-argocd-helm-k8s/spring-boot-app-manifests/deployment.yml
 
-    # Extragem tag-ul curent (numărul de după ultima ":")
-    CURRENT_TAG=$(grep "vladdudau0403/ultimate-cicd:" $FILE | sed 's/.*://')
-    
-    if [ -z "$CURRENT_TAG" ]; then
-      CURRENT_TAG=0
-    fi
+    # Folosim BUILD_NUMBER-ul din Jenkins
+    NEW_TAG=${BUILD_NUMBER}
 
-    # Incrementăm
-    NEW_TAG=$((CURRENT_TAG + 1))
+    echo "Setting new image tag: $NEW_TAG"
 
-    echo "Current tag: $CURRENT_TAG, New tag: $NEW_TAG"
-
-    # Înlocuim în fișier indiferent de valoarea curentă
-    sed -i "s#vladdudau0403/ultimate-cicd:${CURRENT_TAG}#vladdudau0403/ultimate-cicd:${NEW_TAG}#g" $FILE
+    # Înlocuim orice tag existent cu noul build number
+    sed -i "s#vladdudau0403/ultimate-cicd:[0-9]\\+#vladdudau0403/ultimate-cicd:${NEW_TAG}#g" $FILE
 
     git add $FILE
     git commit -m "Update deployment image to version ${NEW_TAG}" || echo "No changes to commit"
     git push https://${GITHUB_TOKEN}@github.com/${GIT_USER_NAME}/${GIT_REPO_NAME} main
 '''
+
 
 
 
